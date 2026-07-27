@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String
+  phone         String?
+  bio           String?
+  avatar        String?
+  gender        String?
+  region        String?   // Daerah
+  address       String?
+  province      String?
+  city          String?
+  district      String?
+  village       String?
+  rtRw          String?
+  facebook      String?
+  instagram     String?
+  twitter       String?
+  website       String?
+  role          UserRole  @default(MEMBER)
+  isVerified    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  businesses        Business[]
+  products          Product[]
+  eventRegistrations EventRegistration[]
+  activities        Activity[]
+
+  @@index([region])
+  @@index([name])
+}
+
+enum UserRole {
+  MEMBER
+  ADMIN
+}
+
+model Business {
+  id            String    @id @default(uuid())
+  userId        String
+  name          String
+  description   String?
+  address       String?
+  category      String?   // Industri, Jasa, Kuliner, etc
+  website       String?
+  phone         String?
+  email         String?
+  logo          String?
+  revenue       String?   // Laporan keuangan (ringkas)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+}
+
+model Product {
+  id            String    @id @default(uuid())
+  userId        String
+  name          String
+  description   String?
+  price         Decimal
+  category      String    // Industri, Jasa, Kuliner, Pertanian, Property, Retail, Lain-Lain
+  location      String?
+  image         String?
+  imageUrl      String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+  @@index([isActive])
+}
+
+model Event {
+  id            String    @id @default(uuid())
+  title         String
+  description   String?
+  image         String?
+  location      String
+  eventType     EventType @default(OFFLINE)
+  startDate     DateTime
+  endDate       DateTime
+  regStart      DateTime?
+  regEnd        DateTime?
+  quota         Int       @default(100)
+  price         Decimal   @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  registrations EventRegistration[]
+
+  @@index([isActive])
+  @@index([startDate])
+}
+
+enum EventType {
+  OFFLINE
+  ONLINE
+  HYBRID
+}
+
+model EventRegistration {
+  id            String    @id @default(uuid())
+  eventId       String
+  userId        String
+  ticketCode    String    @unique
+  qrData        String?
+  status        RegStatus @default(PENDING)
+  paidAt        DateTime?
+  attendedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  event         Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([ticketCode])
+}
+
+enum RegStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  ATTENDED
+}
+
+model VideoCategory {
+  id            String    @id @default(uuid())
+  name          String    @unique
+  slug          String    @unique
+  icon          String?
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  videos        Video[]
+
+  @@index([sortOrder])
+}
+
+model Video {
+  id            String    @id @default(uuid())
+  categoryId    String
+  title         String
+  description   String?
+  youtubeUrl    String    // YouTube embed URL
+  thumbnail     String?
+  duration      String?   // e.g. "12:30"
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  category      VideoCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([sortOrder])
+}
+
+model Activity {
+  id            String    @id @default(uuid())
+  userId        String
+  type          String    // login, register_event, upload_product, etc
+  description   String?
+  metadata      String?   // JSON string for extra data
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
